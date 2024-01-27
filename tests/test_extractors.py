@@ -8,8 +8,8 @@ import pytest
 array_extractor_fasta_params = [
     ("numpy", True),
     ("numpy", False),
-    ("bcolz", True),
-    ("bcolz", False),
+    ("zarr", True),
+    ("zarr", False),
     ("tiledb", False),
     ("tiledb", True),
 ]

@@ -11,9 +11,9 @@ Supports the following types of input data:
 genomelake extracts signal from genomic inputs in provided BED intervals.
 
 ## Requirements
-- python 2.7, 3.5, or 3.6
+- python 2.7 (not sure), 3.5 (not sure), 3.6, 3.7, 3.8, 3.9, 3.10
 - tiledb
-- bcolz
+- zarr
 - cython
 - numpy
 - pybedtools

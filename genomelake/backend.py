@@ -7,8 +7,8 @@ import numpy as np
 import os
 import six
 
-import bcolz
-from pybedtools import BedTool
+import zarr
+from numcodecs import Blosc
 import pyBigWig
 from pysam import FastaFile
 
@@ -20,18 +20,18 @@ from .tiledb_array import load_tiledb
 
 NUM_SEQ_CHARS = 4
 
-_blosc_params = bcolz.cparams(clevel=5, shuffle=bcolz.SHUFFLE, cname="lz4")
+_blosc_params = Blosc(clevel=5, shuffle=Blosc.SHUFFLE, cname="lz4")
 
 _array_writer = {
     "numpy": lambda arr, path: np.save(path, arr),
-    "bcolz": lambda arr, path: bcolz.carray(
-        arr, rootdir=path, cparams=_blosc_params, mode="w"
-    ).flush(),
+    "zarr": lambda arr, path: zarr.save_array(
+        path, arr, compressor=_blosc_params
+    ),
     "tiledb": write_tiledb,
 }
 
 
-def extract_fasta_to_file(fasta, output_dir, mode="bcolz", overwrite=False):
+def extract_fasta_to_file(fasta, output_dir, mode="zarr", overwrite=False):
     assert mode in _array_writer
 
     makedirs(output_dir, exist_ok=overwrite)
@@ -58,7 +58,7 @@ def extract_fasta_to_file(fasta, output_dir, mode="bcolz", overwrite=False):
 def extract_bigwig_to_file(
     bigwig,
     output_dir,
-    mode="bcolz",
+    mode="zarr",
     dtype=np.float32,
     overwrite=False,
     nan_as_zero=True,
@@ -111,13 +111,13 @@ def load_directory(base_dir, in_memory=False):
             for chrom in metadata["file_shapes"]
         }
 
-    elif metadata["type"] == "array_bcolz":
+    elif metadata["type"] == "array_zarr":
         data = {
-            chrom: bcolz.open(os.path.join(base_dir, chrom), mode="r")
+            chrom: zarr.open(os.path.join(base_dir, chrom), mode="r")
             for chrom in metadata["file_shapes"]
         }
         if in_memory:
-            data = {k: data[k].copy() for k in data.keys()}
+            data = {k: data[k][:] for k in data.keys()}
 
     elif metadata["type"] == "array_tiledb":
         data = {
@@ -126,7 +126,7 @@ def load_directory(base_dir, in_memory=False):
         }
 
     else:
-        raise ValueError("Can only extract from array_bcolz and array_numpy")
+        raise ValueError("Can only extract from array_zarr and array_numpy")
 
     for chrom, shape in six.iteritems(metadata["file_shapes"]):
         if data[chrom].shape != tuple(shape):

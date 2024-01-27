@@ -1,10 +1,6 @@
 from __future__ import absolute_import, division, print_function
 import numpy as np
-import six
 
-import bcolz
-from pybedtools import BedTool
-from pybedtools import Interval
 from pysam import FastaFile
 import pyBigWig
 
